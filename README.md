@@ -22,7 +22,7 @@ numeter-backuppc-module interpret backups logs and make statistics
 
 #Configuration
 
-You hate to fix logpath ($Conf{TopDir}/pc) in numeter_poller.cfg
+You have to fix logpath "$Conf{TopDir}/pc" in numeter_poller.cfg
 ```bash
   vim /etc/numeter/numeter_poller.cfg 
   [backuppcModule]
