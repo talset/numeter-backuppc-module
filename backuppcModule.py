@@ -247,31 +247,7 @@ class backuppcModule:
 
 
 
-#        #Taille total transféré
-#        #   - #8 : taille Fichiers existants   totalSizeExist
-#        #   - #10 : taille Nouveaux fichiers   totalSizeNew
-#        print "\nGRAPH : Taille total transféré\n";
-#        print $totalFileSize."\n".$totalSizeExist."\n".$totalSizeNew."\n";
-#
-#
-#        #Taille total compressé transféré
-#        #   - # 16 : taille Fichiers existants compressé   totalSizeExistFileCompr
-#        #   - # 17 : taille Nouveaux fichiers compressé    totalSizeNewFileCompr
-#        print "\nGRAPH : Taille total compressé transféré\n";
-#        print "Niveau comression : $compressionLvl\n";
-#        print $totalSizeExistFileCompr."\n".$totalSizeNewFileCompr."\n";
-#
-#
-#        #Niveau de Compression 
-#        #   - #6 : taille Fichiers existants + Nouveaux fichiers    totalFileSize
-#        #   - taille compressé  Fichiers existants + Nouveaux fichiers
-#        print "\nGRAPH : Niveau de Compression \n";
-#        my $tauxCompression = (100 - ( ($totalSizeExistFileCompr+$totalSizeNewFileCompr) * 100) / $totalFileSize );
-#        print "taux compression : $tauxCompression\n";
-#        print $totalFileSize."\n";
-#        print ($totalSizeExistFileCompr+$totalSizeNewFileCompr);
-#        print "\n";
-
+#TODO Show if it is a full or incr
     def _backupSize(self,pc,mode):
         "return number of errors files"
         now = time.strftime("%Y %m %d %H:%M", time.localtime())
@@ -359,6 +335,14 @@ class backuppcModule:
                          "id": 'CompressionRate',
                          "draw": 'line',
                          "label": 'CompressionRate'},
+                    'withoutCompression': {"type": "GAUGE",
+                         "id": 'withoutCompression',
+                         "draw": 'line',
+                         "label": 'withoutCompression'},
+                    'Compressed': {"type": "GAUGE",
+                         "id": 'Compressed',
+                         "draw": 'line',
+                         "label": 'Compressed'},
             }
 
             infos = {
