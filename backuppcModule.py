@@ -15,16 +15,26 @@ class backuppcModule:
         self._logger.info("Plugin Backuppc start")
         self._logpath = './pc'
         self._STATUS = {}
+        self._configParser=configParser
+
+
+        if self._configParser:
+        # Get logfile
+            if self._configParser.has_option('backuppcModule', 'logpath') \
+            and self._configParser.get('backuppcModule', 'logpath'):
+                self._logpath = self._configParser.get('backuppcModule'
+                                            , 'logpath')
 
 
     
     def pluginsRefresh(self):
         "Return plugins info for refresh"
         for pc in os.listdir(self._logpath):
-            path = self._logpath+'/'+pc+'/'+'backups'
-            #STATUS = self._parserLog(path)
-            self._STATUS[pc] = self._parserLog(path)
-
+            filename = self._logpath+'/'+pc+'/'+'backups'
+            if os.path.isfile(filename):
+                path = filename
+                #STATUS = self._parserLog(path)
+                self._STATUS[pc] = self._parserLog(path)
         INFOS = []
         
         for pc in self._STATUS.keys():
@@ -36,6 +46,8 @@ class backuppcModule:
             INFOS.append(self._numberErrors(pc,'config'))
             # Backup Size
             INFOS.append(self._backupSize(pc,'config'))
+            # Compression Rate
+            INFOS.append(self._compressionRate(pc,'config'))
 
         return INFOS
 
@@ -44,9 +56,11 @@ class backuppcModule:
     def getData(self):
         "get and return all data collected"
         for pc in os.listdir(self._logpath):
-            path = self._logpath+'/'+pc+'/'+'backups'
-            #STATUS = self._parserLog(path)
-            self._STATUS[pc] = self._parserLog(path)
+            filename = self._logpath+'/'+pc+'/'+'backups'
+            if os.path.isfile(filename):
+                path = filename
+                #STATUS = self._parserLog(path)
+                self._STATUS[pc] = self._parserLog(path)
         DATAS = []
         
         for pc in self._STATUS.keys():
@@ -58,6 +72,8 @@ class backuppcModule:
             DATAS.append(self._numberErrors(pc,'fetch'))
             # Backup Size
             DATAS.append(self._backupSize(pc,'fetch'))
+            # Compression Rate
+            DATAS.append(self._compressionRate(pc,'fetch'))
 
         return DATAS
 
@@ -103,9 +119,9 @@ class backuppcModule:
             }
 
             infos = {
-               'Plugin': 'backupDuration',
+               'Plugin': 'duration_' + pc,
                'Describ': 'Backup Duration in min',
-               'Category': 'Backuppc',
+               'Category': 'Backup '+ pc,
                'Base': '1000',
                'Title': 'Backup Duration',
                'Vlabel': 'min',
@@ -159,10 +175,11 @@ class backuppcModule:
             }
 
             infos = {
-               'Plugin': 'filestransfered',
+               'Plugin': 'filesTransfered_' + pc,
                'Describ': 'Number of files transfered',
-               'Category': 'Backuppc',
+               'Category': 'Backup '+ pc,
                'Base': '1000',
+               'Order': 'Exist New Total',
                'Title': 'Files Transfered',
                'Vlabel': 'Number of files',
                'Infos': dsInfos,
@@ -216,9 +233,9 @@ class backuppcModule:
             }
 
             infos = {
-               'Plugin': 'numberErrors',
+               'Plugin': 'numberErrors_' + pc,
                'Describ': 'Number of files errors',
-               'Category': 'Backuppc',
+               'Category': 'Backup '+ pc,
                'Base': '1000',
                'Title': 'Files errors',
                'Vlabel': 'Number of errors',
@@ -264,13 +281,14 @@ class backuppcModule:
         if mode == 'fetch': # DATAS
             datas = {
                     'TimeStamp': nowTimestamp,
-                    'Plugin': 'numberErrors_' + pc,
+                    'Plugin': 'backupSize_' + pc,
                     'Values': {
                                 'SizeExistFiles': self._STATUS[pc]['totalSizeExist'],
                                 'SizeNewFiles': self._STATUS[pc]['totalSizeNew'],
                                 'CompSizeExistFiles': self._STATUS[pc]['totalSizeExistFileCompr'],
                                 'CompSizeNewFiles': self._STATUS[pc]['totalSizeNewFileCompr'],
-                                'CompressionRate': (100 - ((int(self._STATUS[pc]['totalSizeExistFileCompr']) + int(self._STATUS[pc]['totalSizeNewFileCompr']))*100) / int(self._STATUS[pc]['totalFileSize'])),
+                                'totalCompSize': int(self._STATUS[pc]['totalSizeExistFileCompr'])+int(self._STATUS[pc]['totalSizeNewFileCompr']),
+                                'totalSize': int(self._STATUS[pc]['totalSizeExist'])+int(self._STATUS[pc]['totalSizeNew']),
                                }
             }
             return datas
@@ -293,6 +311,50 @@ class backuppcModule:
                          "id": 'CompSizeNewFiles',
                          "draw": 'line',
                          "label": 'CompSizeNewFiles'},
+                    'totalCompSize': {"type": "GAUGE",
+                         "id": 'totalCompSize',
+                         "draw": 'line',
+                         "label": 'totalCompSize'},
+                    'totalSize': {"type": "GAUGE",
+                         "id": 'totalSize',
+                         "draw": 'line',
+                         "label": 'totalSize'},
+            }
+
+            infos = {
+               'Plugin': 'backupSize_' + pc,
+               'Describ': 'Size of backup',
+               'Category': 'Backup '+ pc,
+               'Base': '1000',
+               'Order': 'CompSizeExistFiles CompSizeNewFiles SizeExistFiles SizeNewFiles totalCompSize totalSize',
+               'Title': 'Size Backup',
+               'Vlabel': 'Size in Mo',
+               'Infos': dsInfos,
+            }
+
+            return infos
+
+
+    def _compressionRate(self,pc,mode):
+        "return the compression rate"
+        now = time.strftime("%Y %m %d %H:%M", time.localtime())
+        nowTimestamp = "%.0f" % time.mktime(time.strptime(now, '%Y %m %d %H:%M'))
+
+
+        if mode == 'fetch': # DATAS
+            datas = {
+                    'TimeStamp': nowTimestamp,
+                    'Plugin': 'compressionRate_' + pc,
+                    'Values': {
+                                'withoutCompression': 0,
+                                'Compressed': 100,
+                                'CompressionRate': (100 - ((int(self._STATUS[pc]['totalSizeExistFileCompr']) + int(self._STATUS[pc]['totalSizeNewFileCompr']))*100) / int(self._STATUS[pc]['totalFileSize'])),
+                               }
+            }
+            return datas
+
+        else: # INFOS
+            dsInfos = {
                     'CompressionRate': {"type": "GAUGE",
                          "id": 'CompressionRate',
                          "draw": 'line',
@@ -300,12 +362,13 @@ class backuppcModule:
             }
 
             infos = {
-               'Plugin': 'numberErrors',
-               'Describ': 'Number of files errors',
-               'Category': 'Backuppc',
+               'Plugin': 'compressionRate_' + pc,
+               'Describ': 'Backup Compression Rate',
+               'Category': 'Backup '+ pc,
+               'Order': 'withoutCompression CompressionRate Compressed',
                'Base': '1000',
-               'Title': 'Files errors',
-               'Vlabel': 'Number of errors',
+               'Title': 'Compression Rate',
+               'Vlabel': 'Rate in %',
                'Infos': dsInfos,
             }
 
@@ -313,9 +376,8 @@ class backuppcModule:
 
     def _parserLog(self, path):
         "parse backuppc log and return hash table"
-        f = open (path, 'r')
-        lineList = f.readlines()
-        f.close()
+        with open (path, 'r') as f:
+            lineList = f.readlines()
 
         #Create status hash whith value in backups
         STATUS = {}
