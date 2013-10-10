@@ -27,7 +27,7 @@ class backuppcModule:
 
 
     
-    def pluginsRefresh(self):
+    def getInfo(self):
         "Return plugins info for refresh"
         for pc in os.listdir(self._logpath):
             filename = self._logpath+'/'+pc+'/'+'backups'
@@ -398,4 +398,4 @@ if __name__ == "__main__":
     stats = backuppcModule(logger,None)
 
     print str(stats.getData())
-    print str(stats.pluginsRefresh())
+    print str(stats.getInfo())
