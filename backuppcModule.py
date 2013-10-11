@@ -5,13 +5,14 @@ import time
 import logging
 import os
 import re
+from logging import getLogger
 
 class backuppcModule: 
     "Module Backuppc"
 
-    def  __init__(self,logger,configParser=None):
+    def  __init__(self,configParser=None):
         "Load configuration and start connexion"
-        self._logger= logger
+        self._logger= getLogger(__name__)
         self._logger.info("Plugin Backuppc start")
         self._logpath = './pc'
         self._STATUS = {}
@@ -384,18 +385,12 @@ class backuppcModule:
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger('backuppc')
-    fh = logging.FileHandler('/tmp/backuppc.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+    _logger = logging.getLogger()
+    ch = logging.StreamHandler(stream=sys.stdout)
+    _logger.addHandler(ch)
+    _logger.setLevel(logging.DEBUG)
 
-    stats = backuppcModule(logger,None)
+    stats = backuppcModule(None)
 
     print str(stats.getData())
     print str(stats.getInfo())
